@@ -97,6 +97,165 @@
     var previousSubmissions = [];
 
     // =========================================================================
+    // 电话号码输入掩码 (Input Masking)
+    // =========================================================================
+
+    /**
+     * 实时格式化电话号码并验证 (要求 1 - 附加功能, 要求 4)
+     * 格式: (XXX) XXX-XXXX
+     */
+    function phoneMaskAndValidate(field) {
+        let input = field.value.replace(/\D/g, ''); // 仅保留数字
+
+        // 格式化逻辑
+        let formattedInput = '';
+        if (input.length > 0) {
+            formattedInput += '(' + input.substring(0, 3);
+        }
+        if (input.length >= 4) {
+            formattedInput += ') ' + input.substring(3, 6);
+        }
+        if (input.length >= 7) {
+            formattedInput += '-' + input.substring(6, 10);
+        }
+
+        field.value = formattedInput;
+        
+        // 调用通用验证函数进行最终验证 (要求 4)
+        // 期望格式为: (123) 456-7890 (长度为 14)
+        const phoneRegex = /^\(\d{3}\) \d{3}\-\d{4}$/; 
+        validateField(field, phoneRegex, 14, 14); 
+
+        // 如果用户在输入，但尚未达到完整长度，则不显示错误（即使 validateField 可能会设置错误）
+        if (input.length < 10) {
+            const errorElement = document.getElementById('phoneNumberError');
+            errorElement.style.display = 'none';
+            field.classList.remove('error-input');
+        }
+        
+        // 重新调用 validateForm 来检查提交按钮状态
+        validateForm();
+    }
+
+
+    // =========================================================================
+    // 动态下拉列表和复选框逻辑 (要求 6, 7, 8, 9)
+    // =========================================================================
+
+    /**
+     * 处理 Reason for Feedback 下拉列表的 onChange 事件 (要求 7, 8)
+     */
+    function handleReasonChange(selectElement) {
+        const selectedValue = selectElement.value;
+        const container = document.getElementById('dynamicContentArea');
+        
+        // 1. 移除所有旧的动态内容
+        container.innerHTML = '';
+        
+        // 2. 只有在选择了有效值时才添加复选框 (要求 8)
+        if (selectedValue !== "") {
+            const labelText = `Enable specific settings for ${selectedValue}?`;
+            const checkboxHtml = `
+                <label></label>
+                <input type="checkbox" id="dynamicCheckbox" name="dynamicCheckbox" 
+                       onclick="handleCheckboxToggle(this, '${selectedValue}'); validateForm();"/> 
+                ${labelText}
+                <br><br>
+            `;
+            container.innerHTML = checkboxHtml;
+        }
+
+        // 3. 验证 Reason Select 自身
+        validateSelect(selectElement);
+        
+        // 4. 更新表单状态
+        validateForm();
+    }
+
+    /**
+     * 处理动态生成的复选框的 onClick 事件 (要求 9)
+     */
+    function handleCheckboxToggle(checkbox, reason) {
+        const container = document.getElementById('dynamicContentArea');
+        const existingTextDiv = document.getElementById('dynamicTextFieldDiv');
+
+        if (checkbox.checked) {
+            // 如果选中，添加必填文本字段
+            const textFieldHtml = `
+                <div id="dynamicTextFieldDiv">
+                    <label for="dynamicTextField">Additional detail for ${reason}*:</label>
+                    <input type="text" id="dynamicTextField" name="dynamicTextField" 
+                           placeholder="Enter mandatory detail"
+                           onkeyup="validateDynamicField(this, 5, 100);" />
+                    <span id="dynamicTextFieldError" class="error-text" style="display:none;"></span>
+                    <br><br>
+                </div>
+            `;
+            // 将新的 Div 附加到现有复选框之后
+            container.insertAdjacentHTML('beforeend', textFieldHtml);
+        } else {
+            // 如果未选中，移除文本字段
+            if (existingTextDiv) {
+                existingTextDiv.remove();
+            }
+        }
+        
+        // 重新检查表单以禁用/启用提交按钮 (确保在字段添加/移除时状态正确)
+        validateForm();
+    }
+    
+    /**
+     * 验证动态生成的必填文本字段
+     */
+    function validateDynamicField(field, minLen, maxLen) {
+        // 使用一个简化的 validateField 版本，只检查非空、长度和错误高亮
+        const value = field.value.trim();
+        const errorElement = document.getElementById('dynamicTextFieldError');
+        let isValid = true;
+        let errorMessage = '';
+
+        if (value.length === 0) {
+            isValid = false;
+            errorMessage = field.placeholder + ' 不能为空。';
+        } else if (value.length < minLen) {
+            isValid = false;
+            errorMessage = '至少需要 ' + minLen + ' 个字符。';
+        } else if (value.length > maxLen) {
+            isValid = false;
+            errorMessage = '最多只能有 ' + maxLen + ' 个字符。';
+        }
+
+        if (isValid) {
+            errorElement.style.display = 'none';
+            field.classList.remove('error-input');
+        } else {
+            errorElement.style.display = 'block';
+            errorElement.textContent = errorMessage;
+            field.classList.add('error-input');
+        }
+        
+        validateForm();
+    }
+    
+    /**
+     * 验证 Reason Select 列表 (要求 6)
+     */
+    function validateSelect(selectElement) {
+        const errorElement = document.getElementById('reasonSelectError');
+        let isValid = selectElement.value !== "";
+        
+        if (isValid) {
+             errorElement.style.display = 'none';
+             selectElement.classList.remove('error-input');
+        } else {
+             errorElement.style.display = 'block';
+             errorElement.textContent = '请选择一个反馈原因。';
+             selectElement.classList.add('error-input');
+        }
+        return isValid;
+    }
+
+    // =========================================================================
     // 验证逻辑 (要求 2, 3, 5, 13)
     // =========================================================================
 
@@ -113,6 +272,35 @@
         const errorElement = document.getElementById(field.id + 'Error');
         let isValid = true;
         let errorMessage = '';
+
+        // 特殊字段验证 - 优先级高于通用检查，因为它可能使用不同的 regex
+        if (field.id === 'emailId') {
+            // 要求 4 & 12: 邮箱必须是 @northeastern.edu 域
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@northeastern\.edu$/;
+            
+            if (isRequired && value.length === 0) {
+                isValid = false;
+                errorMessage = 'Email Id 不能为空。';
+            } else if (!emailRegex.test(value) && value.length > 0) {
+                isValid = false;
+                errorMessage = 'Email 格式错误或必须使用 @northeastern.edu 域。';
+            } else if (value.length > maxLen) {
+                 isValid = false;
+                 errorMessage = '最多只能有 ' + maxLen + ' 个字符。';
+            }
+        } 
+        else if (field.id === 'zipcode') {
+            // 要求 4: 邮编必须是 5 位数字
+            const zipRegex = /^\d{5}$/;
+            
+            if (isRequired && value.length === 0) {
+                isValid = false;
+                errorMessage = 'ZipCode 不能为空。';
+            } else if (!zipRegex.test(value) && value.length > 0) {
+                isValid = false;
+                errorMessage = 'ZipCode 必须是 5 位数字。';
+            }
+        }
 
         // 1. 必填字段非空检查 (要求 2a)
         if (isRequired && value.length === 0) {
@@ -228,8 +416,168 @@
             document.getElementById('sourceError').style.display = 'none';
         }
         
+        // 4. 特殊检查 3: Reason Select (下拉列表)
+        const reasonSelect = document.getElementById('reasonSelect');
+        if (reasonSelect && !validateSelect(reasonSelect)) {
+            isFormValid = false;
+        }
+
+        // 5. 特殊检查 4: 动态生成的必填文本字段 (要求 9)
+        const dynamicCheckbox = document.getElementById('dynamicCheckbox');
+        const dynamicTextField = document.getElementById('dynamicTextField');
+        
+        if (dynamicCheckbox && dynamicCheckbox.checked) {
+            // 如果复选框被选中，则文本字段必须存在且有效
+            if (!dynamicTextField || dynamicTextField.value.trim() === '' || dynamicTextField.classList.contains('error-input')) {
+                isFormValid = false;
+            }
+        }
+
         // 最终决定提交按钮的状态
         submitButton.disabled = !isFormValid;
+    }
+
+    // =========================================================================
+    // 提交和初始化逻辑
+    // =========================================================================
+    
+    /**
+     * 清空表单字段 (要求 11)
+     */
+     function clearFormFields(form) {
+        form.reset(); 
+        
+        // 手动清除错误高亮和动态内容
+        document.querySelectorAll('.error-input').forEach(el => el.classList.remove('error-input'));
+        document.querySelectorAll('.error-text').forEach(el => el.style.display = 'none');
+        document.getElementById('dynamicContentArea').innerHTML = '';
+        
+        // 重置 Street Address 2 计数器
+        document.getElementById('address2Counter').textContent = '0/50 characters used';
+        
+        // 确保提交按钮被禁用
+        document.getElementById('submitButton').disabled = true;
+
+        // 重新运行验证来清理所有状态
+        validateForm(); 
+    }
+
+    /**
+     * 处理表单提交 (要求 10, 11)
+     */
+    document.getElementById('feedbackForm').onsubmit = function(event) {
+        event.preventDefault(); // 阻止默认提交行为
+        
+        const form = event.target;
+        
+        // 1. 验证最终状态
+        validateForm();
+        if (form.elements['submitButton'].disabled) {
+            alert('请填写所有必填字段并修正错误。');
+            return; 
+        }
+
+        // 2. 收集数据
+        const data = {};
+        const elements = form.elements;
+        
+        for (let i = 0; i < elements.length; i++) {
+            const element = elements[i];
+            const name = element.name;
+            
+            if (name) {
+                if (element.type === 'radio' || element.type === 'checkbox') {
+                    if (element.checked) {
+                        if (data[name]) {
+                            // 处理多个复选框
+                            if (Array.isArray(data[name])) {
+                                data[name].push(element.value);
+                            } else {
+                                data[name] = [data[name], element.value];
+                            }
+                        } else {
+                            data[name] = element.value;
+                        }
+                    }
+                } else if (element.tagName === 'SELECT') {
+                    data[name] = element.value;
+                } else if (element.type !== 'submit' && element.type !== 'reset') {
+                    data[name] = element.value.trim();
+                }
+            }
+        }
+        
+        // 捕获动态字段的值
+        data['reasonSelect'] = form.querySelector('#reasonSelect').value;
+        const dynamicCheckbox = document.getElementById('dynamicCheckbox');
+        const dynamicTextField = document.getElementById('dynamicTextField');
+        if (dynamicCheckbox) {
+             data['dynamicCheckbox'] = dynamicCheckbox.checked ? 'Yes' : 'No';
+             data['dynamicTextField'] = dynamicTextField ? dynamicTextField.value.trim() : 'N/A';
+        } else {
+             data['dynamicCheckbox'] = 'N/A';
+             data['dynamicTextField'] = 'N/A';
+        }
+        
+        // 要求 13: Street address 2 非强制，如果为空则保持为空
+        data['streetAddress2'] = data['streetAddress2'] || '';
+
+
+        // 3. 存储数据 (要求 10 - 捕获之前的数据)
+        previousSubmissions.push(data);
+        
+        // 4. 显示 HTML Table (要求 10)
+        displayResultsTable(previousSubmissions);
+        
+        // 5. 清空表单 (要求 11)
+        clearFormFields(form);
+    };
+
+    /**
+     * 创建并显示结果表格 (要求 10)
+     */
+    function displayResultsTable(submissions) {
+        if (submissions.length === 0) return;
+
+        let tableHtml = '<h3>Previous Submissions</h3>';
+        
+        // 获取所有键名作为表头 (确保包含所有可能的字段)
+        const allKeys = new Set();
+        submissions.forEach(sub => {
+            Object.keys(sub).forEach(key => allKeys.add(key));
+        });
+        const headers = Array.from(allKeys).sort(); // 排序以便一致性
+
+        tableHtml += '<table border="1" style="width:100%; border-collapse: collapse;">';
+        
+        // 表头
+        tableHtml += '<tr>';
+        headers.forEach(key => {
+            // 格式化表头名称，使其更具可读性
+            const displayKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+            tableHtml += `<th style="padding: 5px;">${displayKey}</th>`;
+        });
+        tableHtml += '</tr>';
+
+        // 行数据
+        submissions.forEach((sub, index) => {
+            tableHtml += `<tr style="background-color: ${index % 2 === 0 ? '#f2f2f2' : 'white'};">`;
+            headers.forEach(key => {
+                let value = sub[key] !== undefined ? sub[key] : 'N/A';
+                
+                // 处理数组值 (如 How did you hear)
+                if (Array.isArray(value)) {
+                    value = value.join(', ');
+                }
+                
+                tableHtml += `<td style="padding: 5px; word-break: break-word;">${value}</td>`;
+            });
+            tableHtml += '</tr>';
+        });
+
+        tableHtml += '</table>';
+
+        document.getElementById('resultsTableContainer').innerHTML = tableHtml;
     }
 
     // 页面加载时，对所有字段执行初始验证，以确保按钮初始状态正确
@@ -237,30 +585,28 @@
         // 页面加载后立即禁用提交按钮
         document.getElementById('submitButton').disabled = true;
 
-        // 首次加载时，对所有字段执行一次完整的验证（尤其针对必填字段）
-        // 模拟按键，确保初始状态正确
-        const requiredFields = [
-            'firstName', 'lastName', 'emailId', 'phoneNumber', 'zipcode', 'comments'
-        ];
-        requiredFields.forEach(id => {
+        // 首次加载时，对所有字段执行一次完整的验证（主要为了设置按钮状态）
+        // 避免在DOM上直接写太复杂的onkeyup逻辑，这里模拟触发验证。
+        const fieldsToInit = ['firstName', 'lastName', 'emailId', 'phoneNumber', 'zipcode', 'comments', 'reasonSelect'];
+        fieldsToInit.forEach(id => {
             const field = document.getElementById(id);
-            // 对于空字段，我们不需要执行完整的 validateField (避免在页面加载时就显示错误)
-            // 只需要确保 validateForm 运行时能正确判断它们为空
-            field.onkeyup(); // 触发 onkeyup 事件来执行验证
+            if (field) {
+                if (field.id === 'phoneNumber') {
+                    phoneMaskAndValidate(field); // 触发电话掩码/验证
+                } else if (field.id === 'reasonSelect') {
+                    validateSelect(field); // 触发下拉列表验证
+                } else {
+                    // 触发通用验证
+                    validateField(field, field.getAttribute('onkeyup').match(/\/(.*?)\//) ? new RegExp(field.getAttribute('onkeyup').match(/\/(.*?)\//)[1]) : null, 
+                              field.getAttribute('onkeyup').match(/\d+/g) ? parseInt(field.getAttribute('onkeyup').match(/\d+/g)[0]) : 0, 
+                              field.getAttribute('onkeyup').match(/\d+/g) ? parseInt(field.getAttribute('onkeyup').match(/\d+/g)[1]) : 0);
+                }
+            }
         });
         
         // 触发一次 validateForm 来设置按钮状态
         validateForm();
     });
-
-    // 禁用默认的 HTML5 验证，因为我们使用了自定义的 JavaScript 验证
-    document.getElementById('feedbackForm').onsubmit = function(event) {
-        // 阻止表单提交，除非通过了所有 JS 验证 (但如果按钮未禁用，则说明验证已通过)
-        if (document.getElementById('submitButton').disabled) {
-            event.preventDefault();
-        }
-        // 后续要求将在这里添加收集数据和显示表格的逻辑
-    };
  </script>
 
  </body>
