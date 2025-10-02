@@ -13,6 +13,16 @@
       main{
           padding: 50px;
       }
+    .error-text {
+    	color: red;
+        font-size: 0.9em;
+        margin-left: 155px; /* 与 label 宽度对齐，使错误信息在输入框下方 */
+        display: block; /* 确保它在单独一行 */
+    }
+
+    .error-input {
+        border: 2px solid red;
+    }
   </style>
  </head>
  <body>
@@ -21,55 +31,236 @@
 	 <main>
 	 <h2>Feeback</h2>
 	 <h3>Love something? Hate something? Let us know!</h3>
-		 Note : Fields marked with an asterisk(*) are mandatory
-		 <br><br>
-		 <form method="post" novalidate>
-			<label>Title*:</label>
-			<input type="radio" name="title" id="miss" value="miss" required="required"/>Miss
-			<input type="radio" name="title" id="mr" value="mr" required="required"/>Mr.
-			<input type="radio" name="title" id="mrs" value="mrs" required="required"/>Mrs.
-			<br><br>
-			<label for="firstName">First Name*:</label>
-			<input type="text" name="firstName" id="firstName" placeholder="First Name" />	
-			<br><br>
-			
-
-			<label for="lastName">Last Name*:</label>
-			<input type="text" name="lastName" id="lastName" placeholder="Last Name" />
-			<br><br>
-			
-
-			<label for="emailId">Email Id*:</label>
-			<input type="text" name="emailId" id="emailId" placeholder="yourname@domain.com" />
-			<br><br>
-			
-
-			<label for="phoneNumber">Phone Number*:</label>
-			<input type="text" name="phoneNumber" id="phoneNumber" placeholder="xxx-xxx-xxxx" />
-			<br><br>
-			
+		Note : Fields marked with an asterisk(*) are mandatory
+		<br><br>
+        <form id="feedbackForm" method="post" novalidate>
+		 	<label>Title*:</label>
+            <span id="titleError" class="error-text" style="display:none;">请选择称谓。</span>
+            <input type="radio" name="title" id="miss" value="miss" required="required" onclick="validateForm();"/>Miss
+            <input type="radio" name="title" id="mr" value="mr" required="required" onclick="validateForm();"/>Mr.
+            <input type="radio" name="title" id="mrs" value="mrs" required="required" onclick="validateForm();"/>Mrs.
+            <br><br>
+            
+            <label for="firstName">First Name*:</label>
+            <input type="text" name="firstName" id="firstName" placeholder="First Name" onkeyup="validateField(this, /^[a-zA-Z\s]+$/, 2, 50);" /> 
+            <span id="firstNameError" class="error-text" style="display:none;"></span>
+            <br><br>
+            
+            <label for="lastName">Last Name*:</label>
+            <input type="text" name="lastName" id="lastName" placeholder="Last Name" onkeyup="validateField(this, /^[a-zA-Z\s]+$/, 2, 50);" />
+            <span id="lastNameError" class="error-text" style="display:none;"></span>
+            <br><br>
+            
+            <label for="emailId">Email Id*:</label>
+            <input type="text" name="emailId" id="emailId" placeholder="yourname@domain.com" onkeyup="validateField(this, null, 5, 100);" />
+            <span id="emailIdError" class="error-text" style="display:none;"></span>
+            <br><br>
+            
+            <label for="phoneNumber">Phone Number*:</label>
+            <input type="text" name="phoneNumber" id="phoneNumber" placeholder="xxx-xxx-xxxx" onkeyup="validateField(this, /^[0-9\-\(\)\s]+$/, 10, 15);" />
+            <span id="phoneNumberError" class="error-text" style="display:none;"></span>
+            <br><br>
+            
+            <label for="streetAddress2">Street Address 2:</label>
+            <input type="text" name="streetAddress2" id="streetAddress2" placeholder="Apt, Suite, etc. (Optional)" onkeyup="validateField(this, /^[a-zA-Z0-9\s\#\-\,]+$/, 0, 50, false);" />
+            <span id="streetAddress2Error" class="error-text" style="display:none;"></span>
+            <div id="address2Counter" style="margin-left: 155px; font-size: 0.8em; color: gray;">0/50 characters used</div>
+            <br><br>
+            
             <label for="zipcode">ZipCode*:</label>
-			<input type="text" name="zipcode" id="zipcode" placeholder="xxxxxx" />
-			<br><br>
-             
-            <label for="zipcode">How did you hear*:</label>
-			<input type='checkbox' name="source" value="facebook" /> Facebook
-            <input type='checkbox' name="source" value="google" /> Google
-            <input type='checkbox' name="source" value="yelp" /> Yelp 
-			<br><br> 
-             
-			<label for="comments">Comments*:</label>
-			<textarea name="text" id="comments" placeholder="Your comments" rows="5" cols="25"></textarea>
-			<br><br>
-			<input type="Submit">
-			<input type="Reset">
-			<br><br>
+            <input type="text" name="zipcode" id="zipcode" placeholder="xxxxxx" onkeyup="validateField(this, /^[0-9]+$/, 5, 10);" />
+            <span id="zipcodeError" class="error-text" style="display:none;"></span>
+            <br><br>
+              
+            <label for="source">How did you hear*:</label>
+            <input type='checkbox' name="source" value="facebook" onclick="validateForm();" /> Facebook
+            <input type='checkbox' name="source" value="google" onclick="validateForm();" /> Google
+            <input type='checkbox' name="source" value="yelp" onclick="validateForm();" /> Yelp 
+            <span id="sourceError" class="error-text" style="display:none;">请至少选择一个来源。</span>
+            <br><br> 
+
+            <label for="comments">Comments*:</label>
+            <textarea name="text" id="comments" placeholder="Your comments" rows="5" cols="25" onkeyup="validateField(this, null, 10, 500);"></textarea>
+            <span id="commentsError" class="error-text" style="display:none;"></span>
+            <br><br>
+
+            <input type="Submit" id="submitButton" disabled>
+            <input type="Reset">
+            <br><br>
 		 </form>
 	 </main>
  </div>
 
  <script>
  
+    // 存储上一次提交的数据
+    var previousSubmissions = [];
+
+    // =========================================================================
+    // 验证逻辑
+    // =========================================================================
+
+    /**
+     * 通用字段验证函数。
+     * @param {HTMLElement} field - 当前输入元素 (input/textarea)。
+     * @param {RegExp} regex - 用于检查字符的正则表达式 (对于纯文本/数字字段)。
+     * @param {number} minLen - 最小长度要求。
+     * @param {number} maxLen - 最大长度要求。
+     * @param {boolean} isRequired - 字段是否为强制性的 (默认为 true)。
+     */
+    function validateField(field, regex, minLen, maxLen, isRequired = true) {
+        const value = field.value.trim();
+        const errorElement = document.getElementById(field.id + 'Error');
+        let isValid = true;
+        let errorMessage = '';
+
+        // 1. 必填字段非空检查 (要求 2a)
+        if (isRequired && value.length === 0) {
+            isValid = false;
+            errorMessage = field.placeholder + ' 不能为空。';
+        } 
+        
+        // 2. 长度检查 (要求 2b & 2c)
+        else if (isRequired && value.length < minLen) {
+            isValid = false;
+            errorMessage = '至少需要 ' + minLen + ' 个字符。';
+        } else if (value.length > maxLen) {
+            isValid = false;
+            errorMessage = '最多只能有 ' + maxLen + ' 个字符。';
+        }
+        
+        // 3. 字符类型检查 (要求 2d)
+        else if (regex && !regex.test(value) && value.length > 0) {
+            isValid = false;
+            // 为不同的字段提供更具体的错误信息
+            if (field.id === 'firstName' || field.id === 'lastName') {
+                 errorMessage = '姓名只能包含字母和空格。';
+            } else if (field.id === 'phoneNumber') {
+                 errorMessage = '电话号码只能包含数字、-、()和空格。';
+            } else if (field.id === 'zipcode') {
+                 errorMessage = '邮编只能包含数字。';
+            } else if (field.id === 'streetAddress2') {
+                 errorMessage = '地址只能包含字母、数字、#、-、, 和空格。';
+            } else {
+                 errorMessage = '该字段包含不允许的特殊字符。';
+            }
+        }
+        
+        // 4. 特殊情况处理：Street Address 2 (非必填)
+        if (field.id === 'streetAddress2') {
+            // 实时字符计数器 (要求 3 - 附加功能)
+            const counter = document.getElementById('address2Counter');
+            counter.textContent = value.length + '/' + maxLen + ' characters used';
+            
+            // 如果非必填字段为空，不显示错误
+            if (!isRequired && value.length === 0) {
+                 isValid = true;
+                 errorMessage = '';
+            }
+            // 如果用户输入了内容，则检查其格式和长度
+            if (value.length > 0) {
+                 // 重新检查长度和字符
+                 if (value.length < minLen) {
+                    isValid = false;
+                    errorMessage = '至少需要 ' + minLen + ' 个字符。';
+                 } else if (regex && !regex.test(value)) {
+                    isValid = false;
+                    errorMessage = '地址只能包含字母、数字、#、-、, 和空格。';
+                 }
+            }
+        }
+        
+        // 动态错误高亮 (要求 3 - 附加功能)
+        if (isValid) {
+            errorElement.style.display = 'none';
+            errorElement.textContent = '';
+            field.classList.remove('error-input');
+        } else {
+            errorElement.style.display = 'block';
+            errorElement.textContent = errorMessage;
+            field.classList.add('error-input');
+        }
+
+        // 验证完成后，检查整个表单状态以决定是否启用提交按钮
+        validateForm();
+    }
+
+    /**
+     * 检查表单中所有必填字段的总体状态，以启用/禁用提交按钮 (要求 3)。
+     */
+    function validateForm() {
+        const form = document.getElementById('feedbackForm');
+        const submitButton = document.getElementById('submitButton');
+        let isFormValid = true;
+
+        // 获取所有带有 onkeyup 事件的必填输入字段
+        const requiredFields = [
+            'firstName', 'lastName', 'emailId', 'phoneNumber', 'zipcode', 'comments'
+        ];
+
+        // 检查所有必填文本/文本域字段
+        requiredFields.forEach(id => {
+            const field = document.getElementById(id);
+            // 检查字段是否为空 (要求 2a) 或是否被标记为错误 (要求 2d, 2b, 2c)
+            // 注意：我们依赖 onkeyup 中的 validateField 已经设置了 'error-input' 类
+            if (!field || field.value.trim() === '' || field.classList.contains('error-input')) {
+                isFormValid = false;
+            }
+        });
+
+        // 特殊检查 1: 称谓 (Radio Buttons)
+        const titleRadios = form.elements['title'];
+        let isTitleChecked = Array.from(titleRadios).some(radio => radio.checked);
+        if (!isTitleChecked) {
+            isFormValid = false;
+            document.getElementById('titleError').style.display = 'block';
+        } else {
+            document.getElementById('titleError').style.display = 'none';
+        }
+
+        // 特殊检查 2: How did you hear (Checkboxes)
+        const sourceCheckboxes = form.elements['source'];
+        let isSourceChecked = Array.from(sourceCheckboxes).some(checkbox => checkbox.checked);
+        if (!isSourceChecked) {
+            isFormValid = false;
+            document.getElementById('sourceError').style.display = 'block';
+        } else {
+            document.getElementById('sourceError').style.display = 'none';
+        }
+        
+        // 最终决定提交按钮的状态
+        submitButton.disabled = !isFormValid;
+    }
+
+    // 页面加载时，对所有字段执行初始验证，以确保按钮初始状态正确
+    document.addEventListener('DOMContentLoaded', function() {
+        // 页面加载后立即禁用提交按钮
+        document.getElementById('submitButton').disabled = true;
+
+        // 首次加载时，对所有字段执行一次完整的验证（尤其针对必填字段）
+        // 模拟按键，确保初始状态正确
+        const requiredFields = [
+            'firstName', 'lastName', 'emailId', 'phoneNumber', 'zipcode', 'comments'
+        ];
+        requiredFields.forEach(id => {
+            const field = document.getElementById(id);
+            // 对于空字段，我们不需要执行完整的 validateField (避免在页面加载时就显示错误)
+            // 只需要确保 validateForm 运行时能正确判断它们为空
+            field.onkeyup(); // 触发 onkeyup 事件来执行验证
+        });
+        
+        // 触发一次 validateForm 来设置按钮状态
+        validateForm();
+    });
+
+    // 禁用默认的 HTML5 验证，因为我们使用了自定义的 JavaScript 验证
+    document.getElementById('feedbackForm').onsubmit = function(event) {
+        // 阻止表单提交，除非通过了所有 JS 验证 (但如果按钮未禁用，则说明验证已通过)
+        if (document.getElementById('submitButton').disabled) {
+            event.preventDefault();
+        }
+        // 后续要求将在这里添加收集数据和显示表格的逻辑
+    };
  </script>
 
  </body>
