@@ -23,9 +23,127 @@
     .error-input {
         border: 2px solid red;
     }
+
+	    #aiAssistantButton {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        padding: 10px 15px;
+        background-color: #0055A5; /* Northeastern Blue */
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        z-index: 1000; /* 确保在最上层 */
+    }
+
+    #chatWindow {
+        position: fixed; /* 保持在视口中 */
+        bottom: 20px;
+        right: 20px;
+        width: 300px;
+        height: 400px;
+        background-color: white;
+        border: 1px solid #ccc;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        display: none; /* 默认隐藏 */
+        flex-direction: column;
+        z-index: 1001;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    #chatHeader {
+        background-color: #0055A5;
+        color: white;
+        padding: 10px;
+        font-weight: bold;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    #chatHeader button {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.2em;
+        cursor: pointer;
+    }
+
+    #chatMessages {
+        flex-grow: 1;
+        padding: 10px;
+        overflow-y: auto;
+        border-bottom: 1px solid #eee;
+    }
+
+    .user-message {
+        text-align: right;
+        margin-bottom: 5px;
+    }
+    .user-message p {
+        background-color: #e0f7fa; /* Light Blue */
+        display: inline-block;
+        padding: 8px;
+        border-radius: 10px 10px 0 10px;
+        max-width: 80%;
+        margin: 0;
+    }
+
+    .assistant-message {
+        text-align: left;
+        margin-bottom: 5px;
+    }
+    .assistant-message p {
+        background-color: #f1f0f0; /* Light Gray */
+        display: inline-block;
+        padding: 8px;
+        border-radius: 10px 10px 10px 0;
+        max-width: 80%;
+        margin: 0;
+    }
+
+    #chatInputArea {
+        display: flex;
+        padding: 10px;
+        border-top: 1px solid #eee;
+    }
+    #chatInput {
+        flex-grow: 1;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        margin-right: 5px;
+    }
+    #sendButton {
+        padding: 8px 12px;
+        background-color: #0055A5;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
   </style>
  </head>
  <body>
+
+<button id="aiAssistantButton" onclick="toggleChatWindow()">AI Assistant</button>
+ 
+ <div id="chatWindow">
+     <div id="chatHeader">
+         AI Assistant (FAQ)
+         <button onclick="toggleChatWindow()">X</button>
+     </div>
+     <div id="chatMessages">
+         <div class="assistant-message"><p>Hi! Ask me any question about this form.</p></div>
+     </div>
+     <div id="chatInputArea">
+         <input type="text" id="chatInput" placeholder="Ask a question..." onkeydown="handleChatInput(event)">
+         <button id="sendButton" onclick="sendChatMessage()">Send</button>
+     </div>
+ </div>
+
  <div id="container">
 	 
 	 <main>
@@ -35,7 +153,7 @@
 		<br><br>
         <form id="feedbackForm" method="post" novalidate>
 		 	<label>Title*:</label>
-            <span id="titleError" class="error-text" style="display:none;">请选择称谓。</span>
+            <span id="titleError" class="error-text" style="display:none;">Please select a title.</span>
             <input type="radio" name="title" id="miss" value="miss" required="required" onclick="validateForm();"/>Miss
             <input type="radio" name="title" id="mr" value="mr" required="required" onclick="validateForm();"/>Mr.
             <input type="radio" name="title" id="mrs" value="mrs" required="required" onclick="validateForm();"/>Mrs.
@@ -76,7 +194,7 @@
             <input type='checkbox' name="source" value="facebook" onclick="validateForm();" /> Facebook
             <input type='checkbox' name="source" value="google" onclick="validateForm();" /> Google
             <input type='checkbox' name="source" value="yelp" onclick="validateForm();" /> Yelp 
-            <span id="sourceError" class="error-text" style="display:none;">请至少选择一个来源。</span>
+            <span id="sourceError" class="error-text" style="display:none;">Please select at least one source.</span>
             <br><br> 
 
             <label for="comments">Comments*:</label>
@@ -95,6 +213,98 @@
  
     // 存储上一次提交的数据
     var previousSubmissions = [];
+
+    // =========================================================================
+    // AI Assistant 逻辑 (要求 4)
+    // =========================================================================
+    
+    // 预定义的 FAQ 问答库 (要求 4.3)
+    const faqData = [
+        { 
+            keywords: ['email', 'mail', 'northeastern', 'use', 'what email'],
+            answer: 'You must use your Northeastern email (example:student@northeastern.edu).' 
+        },
+        { 
+            keywords: ['phone', 'number', 'format', 'what format'], 
+            answer: 'The phone number must be in the format (XXX) XXX-XXXX.' 
+        },
+        { 
+            keywords: ['zip', 'code', 'digits', 'how many'],  
+            answer: 'The zip code must be exactly 5 digits.' 
+        },
+        { 
+            keywords: ['required', 'mandatory', 'must', 'fields', 'what fields'], 
+            answer: 'All fields are required except Street Address 2.' 
+        },
+        { 
+            keywords: ['address 2', 'street address 2', 'optional', 'mandatory'], 
+            answer: 'No, it is optional. If left blank, it will remain empty in the results table.' 
+        }
+    ];
+
+    /**
+     * 切换聊天窗口的显示状态 (要求 4.2)
+     */
+    function toggleChatWindow() {
+        const chatWindow = document.getElementById('chatWindow');
+        chatWindow.style.display = (chatWindow.style.display === 'flex') ? 'none' : 'flex';
+    }
+
+    /**
+     * 处理输入框的回车键 (要求 4.2)
+     */
+    function handleChatInput(event) {
+        if (event.key === 'Enter') {
+            sendChatMessage();
+        }
+    }
+
+    /**
+     * 发送用户消息并获取 AI 回复 (要求 4.4 & 4.5)
+     */
+    function sendChatMessage() {
+        const inputField = document.getElementById('chatInput');
+        const userQuestion = inputField.value.trim();
+
+        if (userQuestion === '') return;
+
+        // 1. 显示用户消息
+        appendMessage(userQuestion, 'user');
+        inputField.value = ''; // 清空输入框
+
+        // 2. 查找匹配的 FAQ
+        const lowerQuestion = userQuestion.toLowerCase();
+        let assistantReply = 'Sorry, I don’t know that yet. Please check the instructions.'; // 默认回复
+
+        // 遍历 FAQ 库，寻找关键词匹配
+        for (const faq of faqData) {
+            if (faq.keywords.some(keyword => lowerQuestion.includes(keyword))) {
+                assistantReply = faq.answer;
+                break;
+            }
+        }
+
+        // 3. 显示 AI 回复 (异步模拟延迟)
+        setTimeout(() => {
+            appendMessage(assistantReply, 'assistant');
+        }, 500); 
+        
+    }
+
+    /**
+     * 将消息添加到聊天记录 (要求 4.5)
+     */
+    function appendMessage(text, sender) {
+        const chatMessages = document.getElementById('chatMessages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = sender === 'user' ? 'user-message' : 'assistant-message';
+        messageDiv.innerHTML = `<p>${text}</p>`;
+        
+        chatMessages.appendChild(messageDiv);
+        
+        // 自动滚动到最新消息
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
 
     // =========================================================================
     // 电话号码输入掩码 (Input Masking)
@@ -216,13 +426,13 @@
 
         if (value.length === 0) {
             isValid = false;
-            errorMessage = field.placeholder + ' 不能为空。';
+            errorMessage = field.placeholder + ' cannot be empty.';
         } else if (value.length < minLen) {
             isValid = false;
-            errorMessage = '至少需要 ' + minLen + ' 个字符。';
+            errorMessage = 'Requires at least ' + minLen + ' characters.';
         } else if (value.length > maxLen) {
             isValid = false;
-            errorMessage = '最多只能有 ' + maxLen + ' 个字符。';
+            errorMessage = 'Can have a maximum of ' + maxLen + ' characters.';
         }
 
         if (isValid) {
@@ -280,13 +490,13 @@
             
             if (isRequired && value.length === 0) {
                 isValid = false;
-                errorMessage = 'Email Id 不能为空。';
+                errorMessage = 'Email Id cannot be empty.';
             } else if (!emailRegex.test(value) && value.length > 0) {
                 isValid = false;
-                errorMessage = 'Email 格式错误或必须使用 @northeastern.edu 域。';
+                errorMessage = 'Email format is invalid or must use @northeastern.edu domain.';
             } else if (value.length > maxLen) {
                  isValid = false;
-                 errorMessage = '最多只能有 ' + maxLen + ' 个字符。';
+                 errorMessage = 'Can have a maximum of ' + maxLen + ' characters.';
             }
         } 
         else if (field.id === 'zipcode') {
@@ -295,26 +505,26 @@
             
             if (isRequired && value.length === 0) {
                 isValid = false;
-                errorMessage = 'ZipCode 不能为空。';
+                errorMessage = 'ZipCode cannot be empty.';
             } else if (!zipRegex.test(value) && value.length > 0) {
                 isValid = false;
-                errorMessage = 'ZipCode 必须是 5 位数字。';
+                errorMessage = 'ZipCode must be exactly 5 digits.';
             }
         }
 
         // 1. 必填字段非空检查 (要求 2a)
         if (isRequired && value.length === 0) {
             isValid = false;
-            errorMessage = field.placeholder + ' 不能为空。';
+            errorMessage = field.placeholder + ' cannot be empty.';
         } 
         
         // 2. 长度检查 (要求 2b & 2c)
         else if (isRequired && value.length < minLen) {
             isValid = false;
-            errorMessage = '至少需要 ' + minLen + ' 个字符。';
+            errorMessage = 'Requires at least ' + minLen + ' characters.';
         } else if (value.length > maxLen) {
             isValid = false;
-            errorMessage = '最多只能有 ' + maxLen + ' 个字符。';
+            errorMessage = 'Can have a maximum of ' + maxLen + ' characters.';
         }
         
         // 3. 字符类型检查 (要求 2d)
@@ -322,15 +532,15 @@
             isValid = false;
             // 为不同的字段提供更具体的错误信息
             if (field.id === 'firstName' || field.id === 'lastName') {
-                 errorMessage = '姓名只能包含字母和空格。';
+                 errorMessage = 'Name can only contain letters and spaces.';
             } else if (field.id === 'phoneNumber') {
-                 errorMessage = '电话号码只能包含数字、-、()和空格。';
+                 errorMessage = 'Phone number can only contain digits, -, (), and spaces.';
             } else if (field.id === 'zipcode') {
-                 errorMessage = '邮编只能包含数字。';
+                 errorMessage = 'Zip code can only contain digits.';
             } else if (field.id === 'streetAddress2') {
-                 errorMessage = '地址只能包含字母、数字、#、-、, 和空格。';
+                 errorMessage = 'Address can only contain letters, numbers, #, -, , and spaces.';
             } else {
-                 errorMessage = '该字段包含不允许的特殊字符。';
+                 errorMessage = 'This field contains disallowed special characters.';
             }
         }
         
@@ -350,10 +560,10 @@
                  // 重新检查长度和字符
                  if (value.length < minLen) {
                     isValid = false;
-                    errorMessage = '至少需要 ' + minLen + ' 个字符。';
+                    errorMessage = 'Requires at least ' + minLen + ' characters.';
                  } else if (regex && !regex.test(value)) {
                     isValid = false;
-                    errorMessage = '地址只能包含字母、数字、#、-、, 和空格。';
+                    errorMessage = 'Address can only contain letters, numbers, #, -, , and spaces.';
                  }
             }
         }
