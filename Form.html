@@ -3,6 +3,7 @@
  <head>
   <title>Feedback</title>
   <style>
+    /* 基础样式 - 保持不变 */
     label {	float: left;
 			width: 150px;}
       #container{
@@ -16,15 +17,16 @@
     .error-text {
     	color: red;
         font-size: 0.9em;
-        margin-left: 155px; /* 与 label 宽度对齐，使错误信息在输入框下方 */
-        display: block; /* 确保它在单独一行 */
+        margin-left: 155px; /* Aligned with label width */
+        display: block;
     }
 
     .error-input {
         border: 2px solid red;
     }
 
-	    #aiAssistantButton {
+    /* AI Assistant Styles */
+    #aiAssistantButton {
         position: absolute;
         top: 20px;
         right: 20px;
@@ -34,11 +36,11 @@
         border: none;
         border-radius: 5px;
         cursor: pointer;
-        z-index: 1000; /* 确保在最上层 */
+        z-index: 1000;
     }
 
     #chatWindow {
-        position: fixed; /* 保持在视口中 */
+        position: fixed;
         bottom: 20px;
         right: 20px;
         width: 300px;
@@ -46,7 +48,7 @@
         background-color: white;
         border: 1px solid #ccc;
         box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        display: none; /* 默认隐藏 */
+        display: none; /* Hidden by default */
         flex-direction: column;
         z-index: 1001;
         border-radius: 8px;
@@ -83,7 +85,7 @@
         margin-bottom: 5px;
     }
     .user-message p {
-        background-color: #e0f7fa; /* Light Blue */
+        background-color: #e0f7fa;
         display: inline-block;
         padding: 8px;
         border-radius: 10px 10px 0 10px;
@@ -96,7 +98,7 @@
         margin-bottom: 5px;
     }
     .assistant-message p {
-        background-color: #f1f0f0; /* Light Gray */
+        background-color: #f1f0f0;
         display: inline-block;
         padding: 8px;
         border-radius: 10px 10px 10px 0;
@@ -124,11 +126,11 @@
         border-radius: 4px;
         cursor: pointer;
     }
+
   </style>
  </head>
  <body>
-
-<button id="aiAssistantButton" onclick="toggleChatWindow()">AI Assistant</button>
+ <button id="aiAssistantButton" onclick="toggleChatWindow()">AI Assistant</button>
  
  <div id="chatWindow">
      <div id="chatHeader">
@@ -170,12 +172,12 @@
             <br><br>
             
             <label for="emailId">Email Id*:</label>
-            <input type="text" name="emailId" id="emailId" placeholder="yourname@domain.com" onkeyup="validateField(this, null, 5, 100);" />
+            <input type="text" name="emailId" id="emailId" placeholder="yourname@northeastern.edu" onkeyup="validateField(this, null, 5, 100);" /> 
             <span id="emailIdError" class="error-text" style="display:none;"></span>
             <br><br>
             
-			<label for="phoneNumber">Phone Number*:</label>
-			<input type="text" name="phoneNumber" id="phoneNumber" placeholder="(XXX) XXX-XXXX" onkeyup="phoneMaskAndValidate(this);" maxlength="14" />
+            <label for="phoneNumber">Phone Number*:</label>
+            <input type="text" name="phoneNumber" id="phoneNumber" placeholder="(XXX) XXX-XXXX" onkeyup="phoneMaskAndValidate(this);" maxlength="14" />
             <span id="phoneNumberError" class="error-text" style="display:none;"></span>
             <br><br>
             
@@ -186,7 +188,7 @@
             <br><br>
             
             <label for="zipcode">ZipCode*:</label>
-            <input type="text" name="zipcode" id="zipcode" placeholder="xxxxxx" onkeyup="validateField(this, /^[0-9]+$/, 5, 10);" />
+            <input type="text" name="zipcode" id="zipcode" placeholder="xxxxx" onkeyup="validateField(this, null, 5, 5);" maxlength="5" />
             <span id="zipcodeError" class="error-text" style="display:none;"></span>
             <br><br>
               
@@ -206,23 +208,24 @@
                 <option value="Website">Website Bug</option>
                 <option value="Other">Other</option>
             </select>
-            <span id="reasonSelectError" class="error-text" style="display:none;">-- Select a reason --</span>
+            <span id="reasonSelectError" class="error-text" style="display:none;">Please select a reason for feedback.</span>
             <br><br>
 
             <div id="dynamicContentArea">
-                </div>
+            </div>
+
 
             <label for="comments">Comments*:</label>
             <textarea name="text" id="comments" placeholder="Your comments" rows="5" cols="25" onkeyup="validateField(this, null, 10, 500);"></textarea>
             <span id="commentsError" class="error-text" style="display:none;"></span>
             <br><br>
 
-            <input type="Submit" id="submitButton" disabled>
-            <input type="Reset">
+            <input type="Submit" id="submitButton" value="Submit" disabled>
+            <input type="Reset" value="Reset">
             <br><br>
 		 </form>
-		 
-		 <div id="resultsTableContainer"></div>
+         
+         <div id="resultsTableContainer"></div>
 	 </main>
  </div>
 
@@ -235,18 +238,18 @@
     // AI Assistant 逻辑 (要求 4)
     // =========================================================================
     
-    // 预定义的 FAQ 问答库 (要求 4.3)
+    // 预定义的 FAQ 问答库 (英文关键词和回复)
     const faqData = [
         { 
-            keywords: ['email', 'mail', 'northeastern', 'use', 'what email'],
-            answer: 'You must use your Northeastern email (example:student@northeastern.edu).' 
+            keywords: ['email', 'mail', 'northeastern', 'use', 'what email'], 
+            answer: 'You must use your Northeastern email (example: student@northeastern.edu).' 
         },
         { 
             keywords: ['phone', 'number', 'format', 'what format'], 
             answer: 'The phone number must be in the format (XXX) XXX-XXXX.' 
         },
         { 
-            keywords: ['zip', 'code', 'digits', 'how many'],  
+            keywords: ['zip', 'code', 'digits', 'how many'], 
             answer: 'The zip code must be exactly 5 digits.' 
         },
         { 
@@ -255,12 +258,12 @@
         },
         { 
             keywords: ['address 2', 'street address 2', 'optional', 'mandatory'], 
-            answer: 'No, it is optional. If left blank, it will remain empty in the results table.' 
+            answer: 'No, Street Address 2 is optional. If left blank, it will remain empty in the results table.' 
         }
     ];
 
     /**
-     * 切换聊天窗口的显示状态 (要求 4.2)
+     * 切换聊天窗口的显示状态 
      */
     function toggleChatWindow() {
         const chatWindow = document.getElementById('chatWindow');
@@ -268,7 +271,7 @@
     }
 
     /**
-     * 处理输入框的回车键 (要求 4.2)
+     * 处理输入框的回车键 (Key Event)
      */
     function handleChatInput(event) {
         if (event.key === 'Enter') {
@@ -277,7 +280,7 @@
     }
 
     /**
-     * 发送用户消息并获取 AI 回复 (要求 4.4 & 4.5)
+     * 发送用户消息并获取 AI 回复
      */
     function sendChatMessage() {
         const inputField = document.getElementById('chatInput');
@@ -309,7 +312,7 @@
     }
 
     /**
-     * 将消息添加到聊天记录 (要求 4.5)
+     * 将消息添加到聊天记录
      */
     function appendMessage(text, sender) {
         const chatMessages = document.getElementById('chatMessages');
@@ -323,19 +326,18 @@
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
+
     // =========================================================================
     // 电话号码输入掩码 (Input Masking)
     // =========================================================================
-
+    
     /**
-     * 实时格式化电话号码并验证 (要求 1 - 附加功能, 要求 4)
-     * 格式: (XXX) XXX-XXXX
+     * 实时格式化电话号码并验证 (格式: (XXX) XXX-XXXX)
      */
     function phoneMaskAndValidate(field) {
-        let input = field.value.replace(/\D/g, ''); // 仅保留数字
-
-        // 格式化逻辑
+        let input = field.value.replace(/\D/g, ''); 
         let formattedInput = '';
+
         if (input.length > 0) {
             formattedInput += '(' + input.substring(0, 3);
         }
@@ -348,19 +350,17 @@
 
         field.value = formattedInput;
         
-        // 调用通用验证函数进行最终验证 (要求 4)
-        // 期望格式为: (123) 456-7890 (长度为 14)
+        // 调用通用验证函数进行最终验证
         const phoneRegex = /^\(\d{3}\) \d{3}\-\d{4}$/; 
         validateField(field, phoneRegex, 14, 14); 
 
-        // 如果用户在输入，但尚未达到完整长度，则不显示错误（即使 validateField 可能会设置错误）
+        // 确保未完成输入时不会显示错误
         if (input.length < 10) {
             const errorElement = document.getElementById('phoneNumberError');
             errorElement.style.display = 'none';
             field.classList.remove('error-input');
         }
         
-        // 重新调用 validateForm 来检查提交按钮状态
         validateForm();
     }
 
@@ -370,7 +370,7 @@
     // =========================================================================
 
     /**
-     * 处理 Reason for Feedback 下拉列表的 onChange 事件 (要求 7, 8)
+     * 处理 Reason for Feedback 下拉列表的 onChange 事件 (触发要求 7, 8)
      */
     function handleReasonChange(selectElement) {
         const selectedValue = selectElement.value;
@@ -400,7 +400,7 @@
     }
 
     /**
-     * 处理动态生成的复选框的 onClick 事件 (要求 9)
+     * 处理动态生成的复选框的 onClick 事件 (触发要求 9)
      */
     function handleCheckboxToggle(checkbox, reason) {
         const container = document.getElementById('dynamicContentArea');
@@ -418,7 +418,6 @@
                     <br><br>
                 </div>
             `;
-            // 将新的 Div 附加到现有复选框之后
             container.insertAdjacentHTML('beforeend', textFieldHtml);
         } else {
             // 如果未选中，移除文本字段
@@ -427,7 +426,6 @@
             }
         }
         
-        // 重新检查表单以禁用/启用提交按钮 (确保在字段添加/移除时状态正确)
         validateForm();
     }
     
@@ -435,7 +433,6 @@
      * 验证动态生成的必填文本字段
      */
     function validateDynamicField(field, minLen, maxLen) {
-        // 使用一个简化的 validateField 版本，只检查非空、长度和错误高亮
         const value = field.value.trim();
         const errorElement = document.getElementById('dynamicTextFieldError');
         let isValid = true;
@@ -465,7 +462,7 @@
     }
     
     /**
-     * 验证 Reason Select 列表 (要求 6)
+     * 验证 Reason Select 列表 
      */
     function validateSelect(selectElement) {
         const errorElement = document.getElementById('reasonSelectError');
@@ -482,17 +479,13 @@
         return isValid;
     }
 
+
     // =========================================================================
-    // 验证逻辑 (要求 2, 3, 5, 13)
+    // 核心验证逻辑 (包含要求 2, 4, 12, 13)
     // =========================================================================
 
     /**
      * 通用字段验证函数。
-     * @param {HTMLElement} field - 当前输入元素 (input/textarea)。
-     * @param {RegExp} regex - 用于检查字符的正则表达式 (对于纯文本/数字字段)。
-     * @param {number} minLen - 最小长度要求。
-     * @param {number} maxLen - 最大长度要求。
-     * @param {boolean} isRequired - 字段是否为强制性的 (默认为 true)。
      */
     function validateField(field, regex, minLen, maxLen, isRequired = true) {
         const value = field.value.trim();
@@ -500,9 +493,8 @@
         let isValid = true;
         let errorMessage = '';
 
-        // 特殊字段验证 - 优先级高于通用检查，因为它可能使用不同的 regex
+        // 特殊字段验证 - 邮箱 (要求 12)
         if (field.id === 'emailId') {
-            // 要求 4 & 12: 邮箱必须是 @northeastern.edu 域
             const emailRegex = /^[a-zA-Z0-9._%+-]+@northeastern\.edu$/;
             
             if (isRequired && value.length === 0) {
@@ -516,8 +508,8 @@
                  errorMessage = 'Can have a maximum of ' + maxLen + ' characters.';
             }
         } 
+        // 特殊字段验证 - 邮编 (要求 4, 12)
         else if (field.id === 'zipcode') {
-            // 要求 4: 邮编必须是 5 位数字
             const zipRegex = /^\d{5}$/;
             
             if (isRequired && value.length === 0) {
@@ -528,14 +520,14 @@
                 errorMessage = 'ZipCode must be exactly 5 digits.';
             }
         }
-
-        // 1. 必填字段非空检查 (要求 2a)
-        if (isRequired && value.length === 0) {
+        
+        // 1. 必填字段非空检查
+        else if (isRequired && value.length === 0) {
             isValid = false;
             errorMessage = field.placeholder + ' cannot be empty.';
         } 
         
-        // 2. 长度检查 (要求 2b & 2c)
+        // 2. 长度检查
         else if (isRequired && value.length < minLen) {
             isValid = false;
             errorMessage = 'Requires at least ' + minLen + ' characters.';
@@ -544,16 +536,11 @@
             errorMessage = 'Can have a maximum of ' + maxLen + ' characters.';
         }
         
-        // 3. 字符类型检查 (要求 2d)
+        // 3. 字符类型检查
         else if (regex && !regex.test(value) && value.length > 0) {
             isValid = false;
-            // 为不同的字段提供更具体的错误信息
             if (field.id === 'firstName' || field.id === 'lastName') {
                  errorMessage = 'Name can only contain letters and spaces.';
-            } else if (field.id === 'phoneNumber') {
-                 errorMessage = 'Phone number can only contain digits, -, (), and spaces.';
-            } else if (field.id === 'zipcode') {
-                 errorMessage = 'Zip code can only contain digits.';
             } else if (field.id === 'streetAddress2') {
                  errorMessage = 'Address can only contain letters, numbers, #, -, , and spaces.';
             } else {
@@ -561,20 +548,16 @@
             }
         }
         
-        // 4. 特殊情况处理：Street Address 2 (非必填)
+        // 4. Street Address 2 (非必填) 和字符计数
         if (field.id === 'streetAddress2') {
-            // 实时字符计数器 (要求 3 - 附加功能)
             const counter = document.getElementById('address2Counter');
             counter.textContent = value.length + '/' + maxLen + ' characters used';
             
-            // 如果非必填字段为空，不显示错误
             if (!isRequired && value.length === 0) {
                  isValid = true;
                  errorMessage = '';
             }
-            // 如果用户输入了内容，则检查其格式和长度
-            if (value.length > 0) {
-                 // 重新检查长度和字符
+            else if (value.length > 0 && !isValid) { 
                  if (value.length < minLen) {
                     isValid = false;
                     errorMessage = 'Requires at least ' + minLen + ' characters.';
@@ -585,7 +568,7 @@
             }
         }
         
-        // 动态错误高亮 (要求 3 - 附加功能)
+        // 动态错误高亮
         if (isValid) {
             errorElement.style.display = 'none';
             errorElement.textContent = '';
@@ -596,7 +579,6 @@
             field.classList.add('error-input');
         }
 
-        // 验证完成后，检查整个表单状态以决定是否启用提交按钮
         validateForm();
     }
 
@@ -608,36 +590,37 @@
         const submitButton = document.getElementById('submitButton');
         let isFormValid = true;
 
-        // 获取所有带有 onkeyup 事件的必填输入字段
+        // 1. 检查所有文本输入字段和文本域
         const requiredFields = [
             'firstName', 'lastName', 'emailId', 'phoneNumber', 'zipcode', 'comments'
         ];
 
-        // 检查所有必填文本/文本域字段
         requiredFields.forEach(id => {
             const field = document.getElementById(id);
-            // 检查字段是否为空 (要求 2a) 或是否被标记为错误 (要求 2d, 2b, 2c)
-            // 注意：我们依赖 onkeyup 中的 validateField 已经设置了 'error-input' 类
             if (!field || field.value.trim() === '' || field.classList.contains('error-input')) {
                 isFormValid = false;
             }
         });
 
-        // 特殊检查 1: 称谓 (Radio Buttons)
+        // 2. 特殊检查 1: 称谓 (Radio Buttons)
         const titleRadios = form.elements['title'];
         let isTitleChecked = Array.from(titleRadios).some(radio => radio.checked);
         if (!isTitleChecked) {
             isFormValid = false;
+            // 修正：将错误提示改为英文
+            document.getElementById('titleError').textContent = 'Please select a title.';
             document.getElementById('titleError').style.display = 'block';
         } else {
             document.getElementById('titleError').style.display = 'none';
         }
 
-        // 特殊检查 2: How did you hear (Checkboxes)
+        // 3. 特殊检查 2: How did you hear (Checkboxes)
         const sourceCheckboxes = form.elements['source'];
         let isSourceChecked = Array.from(sourceCheckboxes).some(checkbox => checkbox.checked);
         if (!isSourceChecked) {
             isFormValid = false;
+            // 修正：将错误提示改为英文
+            document.getElementById('sourceError').textContent = 'Please select at least one source.';
             document.getElementById('sourceError').style.display = 'block';
         } else {
             document.getElementById('sourceError').style.display = 'none';
@@ -649,7 +632,7 @@
             isFormValid = false;
         }
 
-        // 5. 特殊检查 4: 动态生成的必填文本字段 (要求 9)
+        // 5. 特殊检查 4: 动态生成的必填文本字段
         const dynamicCheckbox = document.getElementById('dynamicCheckbox');
         const dynamicTextField = document.getElementById('dynamicTextField');
         
@@ -659,13 +642,14 @@
                 isFormValid = false;
             }
         }
-
+        
         // 最终决定提交按钮的状态
         submitButton.disabled = !isFormValid;
     }
 
+
     // =========================================================================
-    // 提交和初始化逻辑
+    // 提交和初始化逻辑 (要求 10, 11)
     // =========================================================================
     
     /**
@@ -690,7 +674,71 @@
     }
 
     /**
-     * 处理表单提交 (要求 10, 11)
+     * 创建并显示结果表格 (要求 10)
+     */
+    function displayResultsTable(submissions) {
+        const container = document.getElementById('resultsTableContainer');
+        if (!container || submissions.length === 0) return;
+
+        let tableHtml = '<h3>Previous Submissions</h3>';
+        
+        const allKeys = new Set();
+        submissions.forEach(sub => {
+            // 捕获所有键，包括动态字段
+            Object.keys(sub).forEach(key => allKeys.add(key));
+        });
+        
+        // 定义一个显示顺序 (使用字段的原始 name/id)
+        const customOrder = [
+             'title', 'firstName', 'lastName', 'emailId', 'phoneNumber', 'streetAddress2', 'zipcode', 'source', 
+             'reasonSelect', 'dynamicCheckbox', 'dynamicTextField', 'text' 
+        ];
+        
+        // 过滤并排序表头
+        const headers = customOrder.filter(key => allKeys.has(key));
+
+
+        tableHtml += '<table border="1" style="width:100%; border-collapse: collapse;">';
+        
+        // 表头
+        tableHtml += '<tr>';
+        headers.forEach(key => {
+            // 格式化表头名称，使其更具可读性
+            let displayKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+            if (displayKey === 'Text') displayKey = 'Comments';
+            if (displayKey === 'Source') displayKey = 'How did you hear';
+            if (displayKey === 'ReasonSelect') displayKey = 'Reason For Feedback';
+            if (displayKey === 'DynamicCheckbox') displayKey = 'Dynamic Checkbox Enabled';
+            if (displayKey === 'DynamicTextField') displayKey = 'Dynamic Detail';
+
+            tableHtml += `<th style="padding: 5px;">${displayKey}</th>`;
+        });
+        tableHtml += '</tr>';
+
+        // 行数据
+        submissions.forEach((sub, index) => {
+            tableHtml += `<tr style="background-color: ${index % 2 === 0 ? '#f2f2f2' : 'white'};">`;
+            headers.forEach(key => {
+                let value = sub[key] !== undefined ? sub[key] : 'N/A';
+                
+                // 处理数组值 (如 How did you hear)
+                if (Array.isArray(value)) {
+                    value = value.join(', ');
+                }
+                
+                tableHtml += `<td style="padding: 5px; word-break: break-word;">${value}</td>`;
+            });
+            tableHtml += '</tr>';
+        });
+
+        tableHtml += '</table>';
+
+        container.innerHTML = tableHtml;
+    }
+
+
+    /**
+     * 处理表单提交
      */
     document.getElementById('feedbackForm').onsubmit = function(event) {
         event.preventDefault(); // 阻止默认提交行为
@@ -700,7 +748,7 @@
         // 1. 验证最终状态
         validateForm();
         if (form.elements['submitButton'].disabled) {
-            alert('请填写所有必填字段并修正错误。');
+            alert('Please fill in all required fields and correct errors.');
             return; 
         }
 
@@ -708,36 +756,36 @@
         const data = {};
         const elements = form.elements;
         
+        // 遍历所有有名元素
         for (let i = 0; i < elements.length; i++) {
             const element = elements[i];
             const name = element.name;
             
-            if (name) {
-                if (element.type === 'radio' || element.type === 'checkbox') {
+            if (name && element.type !== 'submit' && element.type !== 'reset') { 
+                if (element.type === 'radio') {
                     if (element.checked) {
-                        if (data[name]) {
-                            // 处理多个复选框
-                            if (Array.isArray(data[name])) {
-                                data[name].push(element.value);
-                            } else {
-                                data[name] = [data[name], element.value];
-                            }
-                        } else {
-                            data[name] = element.value;
-                        }
+                        data[name] = element.value;
                     }
-                } else if (element.tagName === 'SELECT') {
-                    data[name] = element.value;
-                } else if (element.type !== 'submit' && element.type !== 'reset') {
+                } else if (element.type === 'checkbox' && name === 'source') {
+                    if (element.checked) {
+                         // 收集所有选中的 source
+                        if (!data[name]) data[name] = [];
+                        data[name].push(element.value);
+                    }
+                } else if (element.tagName === 'SELECT' || element.type === 'text' || element.tagName === 'TEXTAREA') {
                     data[name] = element.value.trim();
                 }
             }
         }
         
-        // 捕获动态字段的值
-        data['reasonSelect'] = form.querySelector('#reasonSelect').value;
+        // 捕获动态字段的值 (使用 id 作为键值)
         const dynamicCheckbox = document.getElementById('dynamicCheckbox');
         const dynamicTextField = document.getElementById('dynamicTextField');
+        
+        // 确保使用统一的键名，方便表格展示
+        data['reasonSelect'] = document.getElementById('reasonSelect').value;
+        data['text'] = document.getElementById('comments').value.trim(); 
+
         if (dynamicCheckbox) {
              data['dynamicCheckbox'] = dynamicCheckbox.checked ? 'Yes' : 'No';
              data['dynamicTextField'] = dynamicTextField ? dynamicTextField.value.trim() : 'N/A';
@@ -746,7 +794,7 @@
              data['dynamicTextField'] = 'N/A';
         }
         
-        // 要求 13: Street address 2 非强制，如果为空则保持为空
+        // Street address 2 非强制，如果为空则保持为空
         data['streetAddress2'] = data['streetAddress2'] || '';
 
 
@@ -761,87 +809,43 @@
     };
 
     /**
-     * 创建并显示结果表格 (要求 10)
+     * 页面加载时，对所有字段执行初始验证
      */
-    function displayResultsTable(submissions) {
-        if (submissions.length === 0) return;
-
-        let tableHtml = '<h3>Previous Submissions</h3>';
-        
-        const allKeys = new Set();
-        submissions.forEach(sub => {
-            Object.keys(sub).forEach(key => allKeys.add(key));
-        });
-        
-        const customOrder = [
-             'title', 'firstName', 'lastName', 'emailId', 'phoneNumber', 'streetAddress2', 'zipcode', 'source', 
-             'Reason For Feedback', 'Dynamic Checkbox Enabled', 'Dynamic Detail', 'text' 
-        ];
-        
-        const headers = customOrder.filter(key => allKeys.has(key));
-
-
-        tableHtml += '<table border="1" style="width:100%; border-collapse: collapse;">';
-        
-        // 表头
-        tableHtml += '<tr>';
-        headers.forEach(key => {
-            let displayKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-            if (displayKey === 'Text') displayKey = 'Comments';
-            if (displayKey === 'Source') displayKey = 'How did you hear';
-
-            tableHtml += `<th style="padding: 5px;">${displayKey}</th>`;
-        });
-        tableHtml += '</tr>';
-
-        // 行数据
-        submissions.forEach((sub, index) => {
-            tableHtml += `<tr style="background-color: ${index % 2 === 0 ? '#f2f2f2' : 'white'};">`;
-            headers.forEach(key => {
-                let value = sub[key] !== undefined ? sub[key] : 'N/A';
-                
-                if (Array.isArray(value)) {
-                    value = value.join(', ');
-                }
-                
-                tableHtml += `<td style="padding: 5px; word-break: break-word;">${value}</td>`;
-            });
-            tableHtml += '</tr>';
-        });
-
-        tableHtml += '</table>';
-
-        document.getElementById('resultsTableContainer').innerHTML = tableHtml;
-    }
-
-
-    // 页面加载时，对所有字段执行初始验证，以确保按钮初始状态正确
     document.addEventListener('DOMContentLoaded', function() {
-        // 页面加载后立即禁用提交按钮
         document.getElementById('submitButton').disabled = true;
 
-        // 首次加载时，对所有字段执行一次完整的验证（主要为了设置按钮状态）
-        // 避免在DOM上直接写太复杂的onkeyup逻辑，这里模拟触发验证。
-        const fieldsToInit = ['firstName', 'lastName', 'emailId', 'phoneNumber', 'zipcode', 'comments', 'reasonSelect'];
+        const fieldsToInit = ['firstName', 'lastName', 'emailId', 'phoneNumber', 'zipcode', 'comments', 'reasonSelect', 'streetAddress2'];
         fieldsToInit.forEach(id => {
             const field = document.getElementById(id);
             if (field) {
                 if (field.id === 'phoneNumber') {
-                    phoneMaskAndValidate(field); // 触发电话掩码/验证
+                    phoneMaskAndValidate(field); 
                 } else if (field.id === 'reasonSelect') {
-                    validateSelect(field); // 触发下拉列表验证
+                    validateSelect(field); 
                 } else {
-                    // 触发通用验证
-                    validateField(field, field.getAttribute('onkeyup').match(/\/(.*?)\//) ? new RegExp(field.getAttribute('onkeyup').match(/\/(.*?)\//)[1]) : null, 
-                              field.getAttribute('onkeyup').match(/\d+/g) ? parseInt(field.getAttribute('onkeyup').match(/\d+/g)[0]) : 0, 
-                              field.getAttribute('onkeyup').match(/\d+/g) ? parseInt(field.getAttribute('onkeyup').match(/\d+/g)[1]) : 0);
+                    // 尝试从 onkeyup 属性中提取参数并执行验证
+                    const onkeyupAttr = field.getAttribute('onkeyup');
+                    if (onkeyupAttr) {
+                        const regexMatch = onkeyupAttr.match(/\/(.*?)\//);
+                        const lengthMatches = onkeyupAttr.match(/\d+/g);
+                        
+                        const regex = regexMatch ? new RegExp(regexMatch[1]) : null;
+                        // 确保 lengthMatches 至少有 2 个数字
+                        const minLen = lengthMatches && lengthMatches.length >= 2 ? parseInt(lengthMatches[0]) : 0;
+                        const maxLen = lengthMatches && lengthMatches.length >= 2 ? parseInt(lengthMatches[1]) : 0;
+                        
+                        // Street Address 2 是唯一非必填字段
+                        const isRequired = field.id !== 'streetAddress2';
+
+                        validateField(field, regex, minLen, maxLen, isRequired);
+                    }
                 }
             }
         });
         
-        // 触发一次 validateForm 来设置按钮状态
         validateForm();
     });
+
  </script>
 
  </body>
