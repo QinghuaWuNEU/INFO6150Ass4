@@ -174,8 +174,8 @@
             <span id="emailIdError" class="error-text" style="display:none;"></span>
             <br><br>
             
-            <label for="phoneNumber">Phone Number*:</label>
-            <input type="text" name="phoneNumber" id="phoneNumber" placeholder="xxx-xxx-xxxx" onkeyup="validateField(this, /^[0-9\-\(\)\s]+$/, 10, 15);" />
+			<label for="phoneNumber">Phone Number*:</label>
+			<input type="text" name="phoneNumber" id="phoneNumber" placeholder="(XXX) XXX-XXXX" onkeyup="phoneMaskAndValidate(this);" maxlength="14" />
             <span id="phoneNumberError" class="error-text" style="display:none;"></span>
             <br><br>
             
@@ -197,6 +197,21 @@
             <span id="sourceError" class="error-text" style="display:none;">Please select at least one source.</span>
             <br><br> 
 
+            <label for="reasonSelect">Reason for Feedback*:</label>
+            <select id="reasonSelect" onchange="handleReasonChange(this);">
+                <option value="" disabled selected>-- Select a reason --</option>
+                <option value="Product">Product Issue</option>
+                <option value="Service">Service Complaint</option>
+                <option value="Suggestion">Feature Suggestion</option>
+                <option value="Website">Website Bug</option>
+                <option value="Other">Other</option>
+            </select>
+            <span id="reasonSelectError" class="error-text" style="display:none;">-- Select a reason --</span>
+            <br><br>
+
+            <div id="dynamicContentArea">
+                </div>
+
             <label for="comments">Comments*:</label>
             <textarea name="text" id="comments" placeholder="Your comments" rows="5" cols="25" onkeyup="validateField(this, null, 10, 500);"></textarea>
             <span id="commentsError" class="error-text" style="display:none;"></span>
@@ -206,6 +221,8 @@
             <input type="Reset">
             <br><br>
 		 </form>
+		 
+		 <div id="resultsTableContainer"></div>
 	 </main>
  </div>
 
@@ -459,7 +476,7 @@
              selectElement.classList.remove('error-input');
         } else {
              errorElement.style.display = 'block';
-             errorElement.textContent = '请选择一个反馈原因。';
+             errorElement.textContent = 'Please select a reason for feedback.';
              selectElement.classList.add('error-input');
         }
         return isValid;
@@ -751,20 +768,28 @@
 
         let tableHtml = '<h3>Previous Submissions</h3>';
         
-        // 获取所有键名作为表头 (确保包含所有可能的字段)
         const allKeys = new Set();
         submissions.forEach(sub => {
             Object.keys(sub).forEach(key => allKeys.add(key));
         });
-        const headers = Array.from(allKeys).sort(); // 排序以便一致性
+        
+        const customOrder = [
+             'title', 'firstName', 'lastName', 'emailId', 'phoneNumber', 'streetAddress2', 'zipcode', 'source', 
+             'Reason For Feedback', 'Dynamic Checkbox Enabled', 'Dynamic Detail', 'text' 
+        ];
+        
+        const headers = customOrder.filter(key => allKeys.has(key));
+
 
         tableHtml += '<table border="1" style="width:100%; border-collapse: collapse;">';
         
         // 表头
         tableHtml += '<tr>';
         headers.forEach(key => {
-            // 格式化表头名称，使其更具可读性
-            const displayKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+            let displayKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+            if (displayKey === 'Text') displayKey = 'Comments';
+            if (displayKey === 'Source') displayKey = 'How did you hear';
+
             tableHtml += `<th style="padding: 5px;">${displayKey}</th>`;
         });
         tableHtml += '</tr>';
@@ -775,7 +800,6 @@
             headers.forEach(key => {
                 let value = sub[key] !== undefined ? sub[key] : 'N/A';
                 
-                // 处理数组值 (如 How did you hear)
                 if (Array.isArray(value)) {
                     value = value.join(', ');
                 }
@@ -789,6 +813,7 @@
 
         document.getElementById('resultsTableContainer').innerHTML = tableHtml;
     }
+
 
     // 页面加载时，对所有字段执行初始验证，以确保按钮初始状态正确
     document.addEventListener('DOMContentLoaded', function() {
